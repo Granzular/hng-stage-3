@@ -5,16 +5,19 @@ from rest_framework.decorators import action
 from main.serializers import ProfileSerializer
 from main.models import Profile
 from main.paginators import ProfilePagination
-from main.utils import natural_language_parser
-
+from main.utils import (natural_language_parser, fetch_external_apis_response,
+                         validate_name, get_or_create_profile,
+                         queryset_to_csv_response)
+from rest_framework.permissions import IsAuthenticated
 
 
 class ProfileViewSet(ModelViewSet):
 
     queryset = Profile.objects.all()
     serializer_class = ProfileSerializer
-    http_method_names = ['head','get']
+    http_method_names = ['head','get','post']
     pagination_class = ProfilePagination
+    #permission_classes = [IsAuthenticated]
 
     def list(self,request,*args,**kwargs):
          q = request.query_params
@@ -42,6 +45,11 @@ class ProfileViewSet(ModelViewSet):
         
          paginated_queryset = self.paginate_queryset(queryset) 
          serializer = ProfileSerializer(paginated_queryset,many=True)
+
+         if q.get('format') == 'csv':
+            # sends the response and a csv file
+            # when ?format=csv
+            return queryset_to_csv_response(queryset.values_list())
 
          return self.get_paginated_response(serializer.data)
          
@@ -71,3 +79,48 @@ class ProfileViewSet(ModelViewSet):
         serializer = ProfileSerializer(paginated_queryset, many=True)
 
         return self.get_paginated_response(serializer.data)
+
+    def create(self,request):
+        # ADMIN access only
+        name = request.data.get('name') or ''
+        valid, response = validate_name(name)
+        
+        if valid == False:
+            return response
+        else:
+            profile,is_new,error_message, is_error = get_or_create_profile(name)
+            if is_error:
+                return Response(error_message,status=status.HTTP_502_BAD_GATEWAY)
+            elif is_new:
+                 return Response({
+                    "status":"success",
+                    "data": {
+                        "id":profile.id,
+                        "name":profile.name,
+                        "gender":profile.gender,
+                        "gender_probability":profile.gender_probability,
+                        #"sample_size":profile.sample_size,
+                        "age":profile.age,
+                        "age_group":profile.age_group,
+                        "country_id":profile.country_id,
+                        "country_name":profile.country_name,
+                        "country_probability":profile.country_probability,
+                        "created_at":profile.created_at
+                    }}, status=status.HTTP_201_CREATED)
+            else:
+                return Response({
+                    "status":"success",
+                    "message":"Profile already exists",
+                    "data": {
+                        "id":profile.id,
+                        "name":profile.name,
+                        "gender":profile.gender,
+                        "gender_probability":profile.gender_probability,
+                        #"sample_size":profile.sample_size,
+                        "age":profile.age,
+                        "age_group":profile.age_group,
+                        "country_id":profile.country_id,
+                        "country_name":profile.country_name,
+                        "country_probability":profile.country_probability,
+                        "created_at":profile.created_at
+                    }}, status=status.HTTP_200_OK)

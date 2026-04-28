@@ -12,6 +12,12 @@ class ProfilePagination(PageNumberPagination):
             'page': self.page.number,
             'limit': self.page.paginator.per_page,
             'total': self.page.paginator.count,
+            'total_pages': self.page.paginator.num_pages,
+            'links': {
+                'self': self.request.build_absolute_uri(),
+                'prev': self.get_previous_link(),
+                'next': self.get_next_link(),
+            },
             'data': data
         })
         
