@@ -26,9 +26,6 @@ class Profile(models.Model):
         if self.name:
             self.name = self.name.lower()
         super().save(*args, **kwargs)
-
-    def __str__(self):
-        return self.name
     
     class Meta:
         ordering = ['created_at']

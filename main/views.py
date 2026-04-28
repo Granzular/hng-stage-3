@@ -5,10 +5,8 @@ from rest_framework.decorators import action
 from main.serializers import ProfileSerializer
 from main.models import Profile
 from main.paginators import ProfilePagination
-from main.utils import (natural_language_parser, fetch_external_apis_response,
-                         validate_name, get_or_create_profile,
+from main.utils import (natural_language_parser, validate_name, get_or_create_profile,
                          queryset_to_csv_response)
-from rest_framework.permissions import IsAuthenticated
 
 
 class ProfileViewSet(ModelViewSet):
@@ -32,7 +30,7 @@ class ProfileViewSet(ModelViewSet):
          filters['country_probability__gte'] = q.get('min_country_probability')
          # clean up filters for None values
          keys = filters.keys()
-         filters = {key:filters[key] for key in keys if filters[key] != None}
+         filters = {key:filters[key] for key in keys if filters[key] is not None}
          # sorting and order
          sort_by = q.get('sort_by')
          order = q.get('order') or 'asc' # asc => ascending.  desc => descending
@@ -56,7 +54,7 @@ class ProfileViewSet(ModelViewSet):
     @action(methods=['get'],detail=False)
     def search(self,request,*args,**kwargs):
         q = request.query_params.get('q')
-        if q == None:
+        if q is None:
             return Response({
                 'status': 'error',
                 'message': 'Missing or empty parameter'
@@ -85,7 +83,7 @@ class ProfileViewSet(ModelViewSet):
         name = request.data.get('name') or ''
         valid, response = validate_name(name)
         
-        if valid == False:
+        if not valid:
             return response
         else:
             profile,is_new,error_message, is_error = get_or_create_profile(name)
