@@ -41,7 +41,6 @@ INSTALLED_APPS = [
     # custom apps
     'account', 
     'main',
-    'auth_app',
     # third-party apps
     'corsheaders',
     'rest_framework',
