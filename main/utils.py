@@ -10,7 +10,13 @@ from django.utils import timezone
 from rest_framework import status
 from rest_framework.response import Response
 from main.models import Profile
-import logging, json, re, pycountry, csv, io, requests
+import logging
+import json
+import re
+import pycountry
+import csv
+import io
+import requests
 
 
 logger = logging.getLogger(__name__)
@@ -41,7 +47,7 @@ def validate_name(name:str)->tuple:
             'status': 'error',
             'message': 'Missing or empty name'
             }, status=status.HTTP_400_BAD_REQUEST)
-    if name.isalpha() == False:
+    if not name.isalpha():
         return False, Response({
             'status': 'error',
             'message': 'Invalid type'
@@ -72,12 +78,11 @@ def process_request(name:str)->tuple:
     '''
     try:
         data1,data2,data3 = fetch_external_apis_response(name)
-        failed_apis = '' # a string of the external api names that returned an invalid response
         # genderize API
         gender = data1.get('gender')
         gender_probability = data1.get('probability')
         sample_size = data1.get('count')
-        if gender == None or sample_size == 0:
+        if gender is None or sample_size == 0:
             failed_api = 'Genderize'
             return None, {
                     'status': 'error',
@@ -87,7 +92,7 @@ def process_request(name:str)->tuple:
 
         # agify API
         age = data2.get('age')
-        if age == None:
+        if age is None:
             failed_api = 'Agify'
             return None, {
                     'status': 'error',
